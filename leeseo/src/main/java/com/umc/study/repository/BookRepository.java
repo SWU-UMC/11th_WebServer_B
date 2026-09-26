@@ -29,4 +29,10 @@ public class BookRepository {
                 body.get("description")
         );
     }
+
+    public List<Map<String, Object>> findByCategory(Long categoryId) {
+        String sql = "SELECT * FROM book b JOIN category c ON b.category_id = c.category_id WHERE c.category_id = " + categoryId;
+
+        return jdbcTemplate.queryForList(sql);
+    }
 }

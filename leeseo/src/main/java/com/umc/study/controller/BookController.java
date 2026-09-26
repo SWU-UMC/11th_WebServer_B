@@ -24,4 +24,9 @@ public class BookController {
         bookService.createBook(body);
         return "도서 등록이 완료되었습니다!";
     }
+
+    @GetMapping("/category/{categoryId}")
+    public List<Map<String, Object>> getBooksByCategory(@PathVariable Long categoryId) {
+        return bookService.getBooksByCategory(categoryId);
+    }
 }

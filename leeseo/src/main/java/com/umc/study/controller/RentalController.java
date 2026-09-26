@@ -1,0 +1,29 @@
+package com.umc.study.controller;
+
+import com.umc.study.service.RentalService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/rentals")
+@RequiredArgsConstructor
+public class RentalController {
+
+    private final RentalService rentalService;
+
+    @PostMapping
+    public String createRental(@RequestBody Map<String, Object> body) {
+        rentalService.createRental(body);
+
+        return "신규 도서 대여 기록을 생성했습니다.";
+    }
+
+    @PatchMapping("/{rentalId}/return")
+    private String returnBook(@PathVariable Long rentalId) {
+        rentalService.returnBook(rentalId);
+
+        return "대츨 도서를 반납하였습니다.";
+    }
+}
