@@ -1,6 +1,6 @@
-package com.umc.study.controller;
+package com.umc.study.week3.controller;
 
-import com.umc.study.service.BookService;
+import com.umc.study.week3.service.BookServiceV1;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,9 +10,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/books")
 @RequiredArgsConstructor
-public class BookController {
+public class BookControllerV1 {
 
-    private final BookService bookService;
+    private final BookServiceV1 bookService;
 
     @GetMapping
     public List<Map<String, Object>> getBooks() {

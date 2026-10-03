@@ -1,4 +1,4 @@
-package com.umc.study.repository;
+package com.umc.study.week3.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
-public class RentalRepository {
+public class RentalRepositoryV1 {
 
     private final JdbcTemplate jdbcTemplate;
 

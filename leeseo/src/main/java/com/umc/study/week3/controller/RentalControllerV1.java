@@ -1,6 +1,6 @@
-package com.umc.study.controller;
+package com.umc.study.week3.controller;
 
-import com.umc.study.service.RentalService;
+import com.umc.study.week3.service.RentalServiceV1;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,9 +9,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/rentals")
 @RequiredArgsConstructor
-public class RentalController {
+public class RentalControllerV1 {
 
-    private final RentalService rentalService;
+    private final RentalServiceV1 rentalService;
 
     @PostMapping
     public String createRental(@RequestBody Map<String, Object> body) {

@@ -1,6 +1,6 @@
-package com.umc.study.service;
+package com.umc.study.week3.service;
 
-import com.umc.study.repository.BookRepository;
+import com.umc.study.week3.repository.BookRepositoryV1;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -9,9 +9,9 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class BookService {
+public class BookServiceV1 {
 
-    private final BookRepository bookRepository;
+    private final BookRepositoryV1 bookRepository;
 
     public List<Map<String, Object>> getAllBooks() {
         return bookRepository.findAll();

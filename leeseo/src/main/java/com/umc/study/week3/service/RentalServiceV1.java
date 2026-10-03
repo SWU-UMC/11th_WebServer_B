@@ -1,6 +1,6 @@
-package com.umc.study.service;
+package com.umc.study.week3.service;
 
-import com.umc.study.repository.RentalRepository;
+import com.umc.study.week3.repository.RentalRepositoryV1;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -8,9 +8,9 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class RentalService {
+public class RentalServiceV1 {
 
-    private final RentalRepository rentalRepository;
+    private final RentalRepositoryV1 rentalRepository;
 
     public void createRental(Map<String, Object> body) {
         rentalRepository.save(body);
