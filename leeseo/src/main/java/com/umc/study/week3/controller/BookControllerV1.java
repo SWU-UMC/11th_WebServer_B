@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/books")
+@RequestMapping("/books/v1")
 @RequiredArgsConstructor
 public class BookControllerV1 {
 
