@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 
 import { BooksService } from './books.service';
 import { BookResponseDto } from './dto/book-response.dto';
@@ -9,8 +9,8 @@ export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
   @Get()
-  async findAll(): Promise<BookResponseDto[]> {
-    return this.booksService.findAll();
+  async findAll(@Query('keyword') keyword?: string): Promise<BookResponseDto[]> {
+    return this.booksService.findAll(keyword);
   }
 
   @Post()

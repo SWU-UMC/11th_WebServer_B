@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 
 import { CreateBookDto } from './dto/create-book.dto';
 import { BookResponseDto } from './dto/book-response.dto';
@@ -17,9 +17,10 @@ export class BooksService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
-  async findAll(): Promise<BookResponseDto[]> {
+  async findAll(keyword?: string): Promise<BookResponseDto[]> {
     const books = await this.bookRepository.find({
       relations: { category: true },
+      where: keyword ? { title: Like(`%${keyword}%`) } : undefined,
       order: { bookId: 'DESC' },
     });
 
