@@ -14,7 +14,11 @@ export class RatingService {
     private readonly memberService: MemberService,
   ) {}
 
-  async getRatingsByMemberId(memberId: number): Promise<RatingResponseDto[]> {
+  async getRatingsByMemberId(
+    memberId: number,
+    page = 0,
+    size = 10,
+  ): Promise<RatingResponseDto[]> {
     const memberExists = await this.memberService.existsById(memberId);
 
     if (!memberExists) {
@@ -28,6 +32,8 @@ export class RatingService {
       order: {
         ratingId: 'DESC',
       },
+      skip: page * size,
+      take: size,
     });
 
     return ratings.map(RatingResponseDto.from);

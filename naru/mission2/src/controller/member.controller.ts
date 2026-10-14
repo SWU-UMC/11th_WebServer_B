@@ -3,6 +3,10 @@ import { CheckResponseDto } from '../dto/check-response.dto';
 import { RatingResponseDto } from '../dto/rating-response.dto';
 import { EmailValidationPipe } from '../pipe/email-validation.pipe';
 import { NicknameValidationPipe } from '../pipe/nickname-validation.pipe';
+import {
+  RatingsPaginationPipe,
+  type RatingsPagination,
+} from '../pipe/ratings-pagination.pipe';
 import { MemberService } from '../service/member.service';
 import { RatingService } from '../service/rating.service';
 
@@ -38,7 +42,12 @@ export class MemberController {
   @Get(':memberId/ratings')
   getRatingsByMemberId(
     @Param('memberId', ParseIntPipe) memberId: number,
+    @Query(new RatingsPaginationPipe()) pagination: RatingsPagination,
   ): Promise<RatingResponseDto[]> {
-    return this.ratingService.getRatingsByMemberId(memberId);
+    return this.ratingService.getRatingsByMemberId(
+      memberId,
+      pagination.page,
+      pagination.size,
+    );
   }
 }
