@@ -1,6 +1,8 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { CheckResponseDto } from '../dto/check-response.dto';
 import { RatingResponseDto } from '../dto/rating-response.dto';
+import { EmailValidationPipe } from '../pipe/email-validation.pipe';
+import { NicknameValidationPipe } from '../pipe/nickname-validation.pipe';
 import { MemberService } from '../service/member.service';
 import { RatingService } from '../service/rating.service';
 
@@ -16,7 +18,9 @@ export class MemberController {
     @Param('nickname') nicknameParam?: string,
     @Query('nickname') nicknameQuery?: string,
   ): Promise<CheckResponseDto> {
-    const nickname = nicknameParam ?? nicknameQuery ?? '';
+    const nickname = new NicknameValidationPipe().transform(
+      nicknameParam ?? nicknameQuery,
+    );
     const available = await this.memberService.isNicknameAvailable(nickname);
     return new CheckResponseDto(available);
   }
@@ -26,7 +30,7 @@ export class MemberController {
     @Param('email') emailParam?: string,
     @Query('email') emailQuery?: string,
   ): Promise<CheckResponseDto> {
-    const email = emailParam ?? emailQuery ?? '';
+    const email = new EmailValidationPipe().transform(emailParam ?? emailQuery);
     const available = await this.memberService.isEmailAvailable(email);
     return new CheckResponseDto(available);
   }
