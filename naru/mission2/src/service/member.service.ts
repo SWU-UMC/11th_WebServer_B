@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateMemberDto } from '../dto/create-member.dto';
 import { CreateMemberResponseDto } from '../dto/create-member-response.dto';
 import { Member } from '../entity/member.entity';
+import { MemberConflictException } from '../exception/member-conflict.exception';
 
 @Injectable()
 export class MemberService {
@@ -15,10 +16,10 @@ export class MemberService {
 
   async createMember(dto: CreateMemberDto): Promise<CreateMemberResponseDto> {
     if (!(await this.isEmailAvailable(dto.email))) {
-      throw new ConflictException('이미 사용 중인 이메일입니다.');
+      throw new MemberConflictException('email');
     }
     if (!(await this.isNicknameAvailable(dto.nickname))) {
-      throw new ConflictException('이미 사용 중인 닉네임입니다.');
+      throw new MemberConflictException('nickname');
     }
 
     const password = await bcrypt.hash(dto.password, 10);
@@ -34,8 +35,33 @@ export class MemberService {
       // Concurrent requests may pass both checks before the UNIQUE constraint wins.
       if (
         error instanceof QueryFailedError &&
-        error.driverError.code === 'ER_DUP_ENTRY'
+        (error.driverError.code === 'ER_DUP_ENTRY' ||
+          error.driverError.errno === 1062)
       ) {
+        const driverError = error.driverError;
+        const detail: unknown = driverError.sqlMessage ?? driverError.message;
+        // Parse only the key name, never the duplicate value (which may contain email/nickname).
+        const key =
+          typeof detail === 'string'
+            ? /for key ['"`]([^'"`]+)['"`]\s*$/i
+                .exec(detail)?.[1]
+                .split('.')
+                .pop()
+            : undefined;
+        for (const field of ['email', 'nickname'] as const) {
+          const names =
+            this.memberRepository.metadata?.uniques
+              .filter(
+                (unique) =>
+                  unique.columns.length === 1 &&
+                  unique.columns[0].propertyName === field,
+              )
+              .map((unique) => unique.name) ?? [];
+          // Existing DB indexes are named email/nickname; metadata covers TypeORM-generated names.
+          if (key === field || (key !== undefined && names.includes(key))) {
+            throw new MemberConflictException(field);
+          }
+        }
         throw new ConflictException('이미 사용 중인 이메일 또는 닉네임입니다.');
       }
       throw error;

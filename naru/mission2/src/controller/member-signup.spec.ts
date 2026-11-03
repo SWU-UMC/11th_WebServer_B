@@ -27,6 +27,15 @@ describe('POST /members', () => {
     existsBy: jest.fn<(where: object) => Promise<boolean>>(),
     create: jest.fn<(data: Partial<Member>) => Member>(),
     save: jest.fn<(member: Member) => Promise<Member>>(),
+    metadata: {
+      uniques: [
+        { name: 'UQ_email_generated', columns: [{ propertyName: 'email' }] },
+        {
+          name: 'UQ_nickname_generated',
+          columns: [{ propertyName: 'nickname' }],
+        },
+      ],
+    },
   };
   const ratings = {
     getRatingsByMemberId: jest.fn<RatingService['getRatingsByMemberId']>(),
@@ -104,7 +113,7 @@ describe('POST /members', () => {
     expect(response.body.message).toBe('이미 사용 중인 이메일입니다.');
     expect(response.body).toEqual({
       isSuccess: false,
-      code: 'COMMON409',
+      code: 'MEMBER4091',
       message: '이미 사용 중인 이메일입니다.',
       result: null,
     });
@@ -121,7 +130,12 @@ describe('POST /members', () => {
       .post('/members')
       .send(input)
       .expect(409);
-    expect(response.body.message).toBe('이미 사용 중인 닉네임입니다.');
+    expect(response.body).toEqual({
+      isSuccess: false,
+      code: 'MEMBER4092',
+      message: '이미 사용 중인 닉네임입니다.',
+      result: null,
+    });
     expect(repository.existsBy.mock.calls).toEqual([
       [{ email: input.email }],
       [{ nickname: input.nickname }],
@@ -164,6 +178,124 @@ describe('POST /members', () => {
       ),
     );
     await request(app.getHttpServer()).post('/members').send(input).expect(409);
+  });
+
+  it.each([
+    ['email', 'MEMBER4091', '이미 사용 중인 이메일입니다.'],
+    ['member.nickname', 'MEMBER4092', '이미 사용 중인 닉네임입니다.'],
+    ['UQ_email_generated', 'MEMBER4091', '이미 사용 중인 이메일입니다.'],
+    [
+      'member.UQ_nickname_generated',
+      'MEMBER4092',
+      '이미 사용 중인 닉네임입니다.',
+    ],
+    [
+      'unknown_email_index',
+      'COMMON409',
+      '이미 사용 중인 이메일 또는 닉네임입니다.',
+    ],
+    ['PRIMARY', 'COMMON409', '이미 사용 중인 이메일 또는 닉네임입니다.'],
+  ])(
+    'maps DB UNIQUE key %s without exposing the duplicate value',
+    async (key, code, message) => {
+      repository.save.mockRejectedValueOnce(
+        new QueryFailedError(
+          'INSERT secret SQL',
+          ['secret password'],
+          Object.assign(new Error('DB failure'), {
+            code: 'ER_DUP_ENTRY',
+            errno: 1062,
+            sqlMessage: `Duplicate entry 'secret email nickname' for key '${key}'`,
+          }),
+        ),
+      );
+      const response = await request(app.getHttpServer())
+        .post('/members')
+        .send(input)
+        .expect(409);
+      expect(response.body).toEqual({
+        isSuccess: false,
+        code,
+        message,
+        result: null,
+      });
+      expect(repository.existsBy).toHaveBeenCalledTimes(2);
+      expect(repository.save).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('recognizes errno 1062 and falls back to the driver message', async () => {
+    repository.save.mockRejectedValueOnce(
+      new QueryFailedError(
+        'INSERT',
+        [],
+        Object.assign(
+          new Error("Duplicate entry 'private' for key 'member.email'"),
+          { errno: 1062 },
+        ),
+      ),
+    );
+    const response = await request(app.getHttpServer())
+      .post('/members')
+      .send(input)
+      .expect(409);
+    expect(response.body).toEqual({
+      isSuccess: false,
+      code: 'MEMBER4091',
+      message: '이미 사용 중인 이메일입니다.',
+      result: null,
+    });
+  });
+
+  it('returns a generic conflict when the duplicate key cannot be identified', async () => {
+    repository.save.mockRejectedValueOnce(
+      new QueryFailedError(
+        'INSERT',
+        [],
+        Object.assign(new Error('private duplicate details'), {
+          code: 'ER_DUP_ENTRY',
+        }),
+      ),
+    );
+    const response = await request(app.getHttpServer())
+      .post('/members')
+      .send(input)
+      .expect(409);
+    expect(response.body).toEqual({
+      isSuccess: false,
+      code: 'COMMON409',
+      message: '이미 사용 중인 이메일 또는 닉네임입니다.',
+      result: null,
+    });
+  });
+
+  it.each([
+    { code: 'ER_NO_REFERENCED_ROW_2', errno: 1452 },
+    { code: 'ER_BAD_NULL_ERROR', errno: 1048 },
+    { code: 'ER_LOCK_DEADLOCK', errno: 1213 },
+    { code: 'ER_PARSE_ERROR', errno: 1064 },
+    {},
+  ])('does not misclassify non-duplicate DB error %j', async (details) => {
+    repository.save.mockRejectedValueOnce(
+      new QueryFailedError(
+        'INSERT secret',
+        ['private'],
+        Object.assign(
+          new Error("private DB error for key 'member.email'"),
+          details,
+        ),
+      ),
+    );
+    const response = await request(app.getHttpServer())
+      .post('/members')
+      .send(input)
+      .expect(500);
+    expect(response.body).toEqual({
+      isSuccess: false,
+      code: 'COMMON500',
+      message: '서버 오류가 발생했습니다.',
+      result: null,
+    });
   });
 
   it('rejects undeclared DTO fields instead of silently removing them', async () => {
