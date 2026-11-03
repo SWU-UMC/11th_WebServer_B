@@ -1,4 +1,8 @@
 import {
+  ERROR_MESSAGES,
+  commonResponseCode,
+} from '../common/response.constants';
+import {
   ArgumentsHost,
   Catch,
   ExceptionFilter,
@@ -16,7 +20,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = '서버 오류가 발생했습니다.';
+    let message: string = ERROR_MESSAGES.INTERNAL_SERVER_ERROR;
 
     if (exception instanceof HttpException && status < 500) {
       const body = exception.getResponse();
@@ -38,7 +42,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       code:
         exception instanceof MemberConflictException
           ? exception.code
-          : `COMMON${status}`,
+          : commonResponseCode(status),
       message,
       result: null,
     });

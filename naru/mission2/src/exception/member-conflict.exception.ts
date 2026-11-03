@@ -1,14 +1,12 @@
 import { ConflictException } from '@nestjs/common';
+import { MEMBER_CONFLICTS } from '../common/response.constants';
 
 export class MemberConflictException extends ConflictException {
-  readonly code: 'MEMBER4091' | 'MEMBER4092';
+  readonly code: (typeof MEMBER_CONFLICTS)[keyof typeof MEMBER_CONFLICTS]['code'];
 
-  constructor(field: 'email' | 'nickname') {
-    super(
-      field === 'email'
-        ? '이미 사용 중인 이메일입니다.'
-        : '이미 사용 중인 닉네임입니다.',
-    );
-    this.code = field === 'email' ? 'MEMBER4091' : 'MEMBER4092';
+  constructor(field: keyof typeof MEMBER_CONFLICTS) {
+    const error = MEMBER_CONFLICTS[field];
+    super(error.message);
+    this.code = error.code;
   }
 }

@@ -1,3 +1,4 @@
+import { ERROR_MESSAGES } from '../common/response.constants';
 import {
   ConflictException,
   ForbiddenException,
@@ -23,14 +24,13 @@ export class RatingService {
 
   async createRating(memberId: number, dto: CreateRatingDto): Promise<number> {
     if (!(await this.memberService.existsById(memberId))) {
-      throw new NotFoundException('Member not found');
+      throw new NotFoundException(ERROR_MESSAGES.MEMBER_NOT_FOUND);
     }
     const exists = await this.ratingRepository.existsBy({
       member: { memberId },
       movieId: dto.movieId,
     });
-    if (exists)
-      throw new ConflictException('이미 해당 영화에 평점을 등록했습니다.');
+    if (exists) throw new ConflictException(ERROR_MESSAGES.RATING_DUPLICATE);
 
     const rating = this.ratingRepository.create({
       member: { memberId },
@@ -46,7 +46,7 @@ export class RatingService {
         error instanceof QueryFailedError &&
         error.driverError.code === 'ER_DUP_ENTRY'
       ) {
-        throw new ConflictException('이미 해당 영화에 평점을 등록했습니다.');
+        throw new ConflictException(ERROR_MESSAGES.RATING_DUPLICATE);
       }
       throw error;
     }
@@ -77,11 +77,9 @@ export class RatingService {
       where: { ratingId },
       relations: { member: true },
     });
-    if (!rating) throw new NotFoundException('Rating not found');
+    if (!rating) throw new NotFoundException(ERROR_MESSAGES.RATING_NOT_FOUND);
     if (Number(rating.member.memberId) !== memberId) {
-      throw new ForbiddenException(
-        '본인의 평점만 수정하거나 삭제할 수 있습니다.',
-      );
+      throw new ForbiddenException(ERROR_MESSAGES.RATING_FORBIDDEN);
     }
     return rating;
   }
@@ -94,7 +92,7 @@ export class RatingService {
     const memberExists = await this.memberService.existsById(memberId);
 
     if (!memberExists) {
-      throw new NotFoundException('Member not found');
+      throw new NotFoundException(ERROR_MESSAGES.MEMBER_NOT_FOUND);
     }
 
     const ratings = await this.ratingRepository.find({

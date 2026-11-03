@@ -1,3 +1,4 @@
+import { SUCCESS_RESPONSES } from '../common/response.constants';
 import {
   Body,
   Controller,
@@ -25,8 +26,7 @@ export class RatingController {
     const ratingId = await this.ratingService.createRating(memberId, dto);
     return {
       isSuccess: true,
-      code: 'COMMON201',
-      message: '평점 등록에 성공했습니다.',
+      ...SUCCESS_RESPONSES.RATING_CREATED,
       result: ratingId,
     };
   }
@@ -44,8 +44,7 @@ export class RatingController {
     );
     return {
       isSuccess: true,
-      code: 'COMMON200',
-      message: '평점 수정에 성공했습니다.',
+      ...SUCCESS_RESPONSES.RATING_UPDATED,
       result: updatedId,
     };
   }

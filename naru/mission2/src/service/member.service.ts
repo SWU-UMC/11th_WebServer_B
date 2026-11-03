@@ -1,3 +1,4 @@
+import { ERROR_MESSAGES } from '../common/response.constants';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
@@ -62,7 +63,7 @@ export class MemberService {
             throw new MemberConflictException(field);
           }
         }
-        throw new ConflictException('이미 사용 중인 이메일 또는 닉네임입니다.');
+        throw new ConflictException(ERROR_MESSAGES.MEMBER_DUPLICATE);
       }
       throw error;
     }

@@ -162,7 +162,9 @@ describe('POST /members', () => {
     });
     for (const field of ['email', 'nickname', 'password'] as const) {
       if (!(field in body) || body[field] !== input[field]) {
-        expect(response.body.message).toContain(field);
+        expect(response.body.message).toContain(
+          field === 'password' ? '비밀번호' : field,
+        );
       }
     }
     expect(repository.existsBy).not.toHaveBeenCalled();
