@@ -6,7 +6,6 @@ import {
   ParseIntPipe,
   Post,
   Query,
-  ValidationPipe,
 } from '@nestjs/common';
 import { CreateMemberDto } from '../dto/create-member.dto';
 import { CreateMemberResponseDto } from '../dto/create-member-response.dto';
@@ -30,7 +29,7 @@ export class MemberController {
 
   @Post()
   createMember(
-    @Body(new ValidationPipe({ whitelist: true, transform: true }))
+    @Body()
     dto: CreateMemberDto,
   ): Promise<CreateMemberResponseDto> {
     return this.memberService.createMember(dto);
