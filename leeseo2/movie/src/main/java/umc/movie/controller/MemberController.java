@@ -1,9 +1,10 @@
 package umc.movie.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import umc.movie.dto.EmailCheckResponse;
-import umc.movie.dto.NicknameCheckResponse;
+import umc.movie.dto.*;
 import umc.movie.service.MemberService;
 
 @RestController
@@ -21,5 +22,14 @@ public class MemberController {
     @GetMapping("/email/{email}")
     public EmailCheckResponse checkEmail(@PathVariable String email) {
         return memberService.checkEmail(email);
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<MemberResponse>> signUp(
+            @Valid @RequestBody SignUpRequest request
+    ) {
+        MemberResponse response = memberService.signUp(request);
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created("회원가입에 성공했습니다.", response));
     }
 }
