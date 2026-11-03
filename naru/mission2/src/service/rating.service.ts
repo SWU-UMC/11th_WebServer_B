@@ -1,6 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
+import { CreateRatingDto } from '../dto/create-rating.dto';
+import { UpdateRatingDto } from '../dto/update-rating.dto';
 import { RatingResponseDto } from '../dto/rating-response.dto';
 import { Member } from '../entity/member.entity';
 import { Rating } from '../entity/rating.entity';
@@ -13,6 +20,71 @@ export class RatingService {
     private readonly ratingRepository: Repository<Rating>,
     private readonly memberService: MemberService,
   ) {}
+
+  async createRating(memberId: number, dto: CreateRatingDto): Promise<number> {
+    if (!(await this.memberService.existsById(memberId))) {
+      throw new NotFoundException('Member not found');
+    }
+    const exists = await this.ratingRepository.existsBy({
+      member: { memberId },
+      movieId: dto.movieId,
+    });
+    if (exists)
+      throw new ConflictException('이미 해당 영화에 평점을 등록했습니다.');
+
+    const rating = this.ratingRepository.create({
+      member: { memberId },
+      movieId: dto.movieId,
+      score: dto.score,
+      comment: dto.comment ?? null,
+    });
+    try {
+      const saved = await this.ratingRepository.save(rating);
+      return Number(saved.ratingId);
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        error.driverError.code === 'ER_DUP_ENTRY'
+      ) {
+        throw new ConflictException('이미 해당 영화에 평점을 등록했습니다.');
+      }
+      throw error;
+    }
+  }
+
+  async updateRating(
+    memberId: number,
+    ratingId: number,
+    dto: UpdateRatingDto,
+  ): Promise<number> {
+    const rating = await this.getOwnedRating(memberId, ratingId);
+    rating.score = dto.score;
+    if (dto.comment !== undefined) rating.comment = dto.comment;
+    const saved = await this.ratingRepository.save(rating);
+    return Number(saved.ratingId);
+  }
+
+  async deleteRating(memberId: number, ratingId: number): Promise<void> {
+    const rating = await this.getOwnedRating(memberId, ratingId);
+    await this.ratingRepository.remove(rating);
+  }
+
+  private async getOwnedRating(
+    memberId: number,
+    ratingId: number,
+  ): Promise<Rating> {
+    const rating = await this.ratingRepository.findOne({
+      where: { ratingId },
+      relations: { member: true },
+    });
+    if (!rating) throw new NotFoundException('Rating not found');
+    if (Number(rating.member.memberId) !== memberId) {
+      throw new ForbiddenException(
+        '본인의 평점만 수정하거나 삭제할 수 있습니다.',
+      );
+    }
+    return rating;
+  }
 
   async getRatingsByMemberId(
     memberId: number,
