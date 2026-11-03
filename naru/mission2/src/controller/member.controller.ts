@@ -1,4 +1,15 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  ValidationPipe,
+} from '@nestjs/common';
+import { CreateMemberDto } from '../dto/create-member.dto';
+import { CreateMemberResponseDto } from '../dto/create-member-response.dto';
 import { CheckResponseDto } from '../dto/check-response.dto';
 import { RatingResponseDto } from '../dto/rating-response.dto';
 import { EmailValidationPipe } from '../pipe/email-validation.pipe';
@@ -16,6 +27,14 @@ export class MemberController {
     private readonly memberService: MemberService,
     private readonly ratingService: RatingService,
   ) {}
+
+  @Post()
+  createMember(
+    @Body(new ValidationPipe({ whitelist: true, transform: true }))
+    dto: CreateMemberDto,
+  ): Promise<CreateMemberResponseDto> {
+    return this.memberService.createMember(dto);
+  }
 
   @Get(['nickname', 'nickname/:nickname'])
   async checkNickname(
