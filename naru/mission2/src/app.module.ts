@@ -12,6 +12,7 @@ import { MemberService } from './service/member.service';
 import { RatingService } from './service/rating.service';
 import { AuthController } from './controller/auth.controller';
 import { AuthService } from './service/auth.service';
+import { AuthGuard } from './guard/auth.guard';
 
 @Module({
   imports: [
@@ -43,6 +44,6 @@ import { AuthService } from './service/auth.service';
     TypeOrmModule.forFeature([Member, Rating]),
   ],
   controllers: [AppController, MemberController, RatingController, AuthController],
-  providers: [AppService, MemberService, RatingService, AuthService],
+  providers: [AppService, MemberService, RatingService, AuthService, AuthGuard],
 })
 export class AppModule {}
