@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { MemberConflictException } from '../exception/member-conflict.exception';
+import { ApiException } from '../exception/api.exception';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -40,6 +41,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     response.status(status).json({
       isSuccess: false,
       code:
+        exception instanceof ApiException ||
         exception instanceof MemberConflictException
           ? exception.code
           : commonResponseCode(status),
