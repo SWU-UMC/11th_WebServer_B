@@ -1,3 +1,4 @@
+import { ERROR_MESSAGES } from '../common/response.constants';
 import { BadRequestException, PipeTransform } from '@nestjs/common';
 
 export interface RatingsPagination {
@@ -14,7 +15,7 @@ export class RatingsPaginationPipe implements PipeTransform<
     const size = this.parse(query.size, 10, 1, 'size');
 
     if (!Number.isSafeInteger(page * size)) {
-      throw new BadRequestException('Pagination offset is too large');
+      throw new BadRequestException(ERROR_MESSAGES.PAGINATION_OFFSET_TOO_LARGE);
     }
 
     return { page, size };
@@ -29,12 +30,16 @@ export class RatingsPaginationPipe implements PipeTransform<
     if (value === undefined) return defaultValue;
 
     if (typeof value !== 'string' || !/^\d+$/.test(value)) {
-      throw new BadRequestException(`${name} must be an integer >= ${minimum}`);
+      throw new BadRequestException(
+        ERROR_MESSAGES.INVALID_PAGINATION(name, minimum),
+      );
     }
 
     const parsed = Number(value);
     if (!Number.isSafeInteger(parsed) || parsed < minimum) {
-      throw new BadRequestException(`${name} must be an integer >= ${minimum}`);
+      throw new BadRequestException(
+        ERROR_MESSAGES.INVALID_PAGINATION(name, minimum),
+      );
     }
 
     return parsed;

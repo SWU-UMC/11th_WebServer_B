@@ -1,10 +1,11 @@
+import { ERROR_MESSAGES } from '../common/response.constants';
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 
 @Injectable()
 export class EmailValidationPipe implements PipeTransform<unknown, string> {
   transform(value: unknown): string {
     if (typeof value !== 'string' || value.length > 254) {
-      throw new BadRequestException('Email must be a valid email address');
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_EMAIL);
     }
 
     const parts = value.split('@');
@@ -21,7 +22,7 @@ export class EmailValidationPipe implements PipeTransform<unknown, string> {
       !domain.split('.').every((label) => domainLabel.test(label)) ||
       !/^[a-zA-Z]{2,}$/.test(domain.split('.').at(-1) ?? '')
     ) {
-      throw new BadRequestException('Email must be a valid email address');
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_EMAIL);
     }
 
     return value;
