@@ -4,6 +4,10 @@ export function commonResponseCode(status: number): string {
 }
 
 export const SUCCESS_RESPONSES = {
+  RATING_DELETED: {
+    code: commonResponseCode(200),
+    message: '평점을 삭제했습니다.',
+  },
   MEMBER_UPDATED: {
     code: commonResponseCode(200),
     message: '회원 정보를 수정했습니다.',
