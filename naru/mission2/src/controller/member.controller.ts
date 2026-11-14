@@ -1,8 +1,10 @@
+import { MemberUpdateRequestDto } from '../dto/member-update-request.dto';
 import {
   Body,
   Controller,
   Get,
   Param,
+  Patch,
   ParseIntPipe,
   Post,
   Query,
@@ -47,6 +49,20 @@ export class MemberController {
     return {
       isSuccess: true,
       ...SUCCESS_RESPONSES.MEMBER_INFO,
+      result,
+    };
+  }
+
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  async updateMyInfo(
+    @Req() request: Request & { memberId: number },
+    @Body() dto: MemberUpdateRequestDto,
+  ) {
+    const result = await this.memberService.updateMyInfo(request.memberId, dto);
+    return {
+      isSuccess: true,
+      ...SUCCESS_RESPONSES.MEMBER_UPDATED,
       result,
     };
   }
