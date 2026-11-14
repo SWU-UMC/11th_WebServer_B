@@ -4,6 +4,10 @@ export function commonResponseCode(status: number): string {
 }
 
 export const SUCCESS_RESPONSES = {
+  LOGIN: {
+    code: commonResponseCode(200),
+    message: '로그인에 성공했습니다.',
+  },
   MEMBER_CREATED: {
     code: commonResponseCode(201),
     message: '회원가입에 성공했습니다.',
@@ -30,6 +34,7 @@ export const MEMBER_CONFLICTS = {
 } as const;
 
 export const ERROR_MESSAGES = {
+  INVALID_LOGIN: '이메일 또는 비밀번호가 올바르지 않습니다.',
   INTERNAL_SERVER_ERROR: '서버 오류가 발생했습니다.',
   MEMBER_NOT_FOUND: '회원을 찾을 수 없습니다.',
   MEMBER_DUPLICATE: '이미 사용 중인 이메일 또는 닉네임입니다.',
