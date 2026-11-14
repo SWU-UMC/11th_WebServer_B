@@ -1,5 +1,5 @@
 import { ERROR_MESSAGES } from '../common/response.constants';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -7,6 +7,8 @@ import { CreateMemberDto } from '../dto/create-member.dto';
 import { CreateMemberResponseDto } from '../dto/create-member-response.dto';
 import { Member } from '../entity/member.entity';
 import { MemberConflictException } from '../exception/member-conflict.exception';
+import { ApiException } from '../exception/api.exception';
+import { MemberInfoResponseDto } from '../dto/member-info-response.dto';
 
 @Injectable()
 export class MemberService {
@@ -67,6 +69,20 @@ export class MemberService {
       }
       throw error;
     }
+  }
+
+  async getMyInfo(memberId: number): Promise<MemberInfoResponseDto> {
+    const member = await this.memberRepository.findOne({
+      where: { memberId },
+    });
+    if (!member) {
+      throw new ApiException(
+        HttpStatus.NOT_FOUND,
+        'MEMBER404_1',
+        ERROR_MESSAGES.MEMBER_NOT_FOUND,
+      );
+    }
+    return MemberInfoResponseDto.from(member);
   }
 
   async isNicknameAvailable(nickname: string): Promise<boolean> {

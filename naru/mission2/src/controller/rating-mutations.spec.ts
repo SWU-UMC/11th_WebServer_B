@@ -1,3 +1,4 @@
+import { JwtModule } from '@nestjs/jwt';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -41,6 +42,11 @@ describe('Rating mutations HTTP', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
+      imports: [
+        JwtModule.register({
+          secret: 'test-only-member-secret-at-least-32-characters',
+        }),
+      ],
       controllers: [RatingController, MemberController],
       providers: [
         RatingService,

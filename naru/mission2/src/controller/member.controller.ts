@@ -6,7 +6,12 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import { AuthGuard } from '../guard/auth.guard';
+import { SUCCESS_RESPONSES } from '../common/response.constants';
 import { CreateMemberDto } from '../dto/create-member.dto';
 import { CreateMemberResponseDto } from '../dto/create-member-response.dto';
 import { CheckResponseDto } from '../dto/check-response.dto';
@@ -33,6 +38,17 @@ export class MemberController {
     dto: CreateMemberDto,
   ): Promise<CreateMemberResponseDto> {
     return this.memberService.createMember(dto);
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  async getMyInfo(@Req() request: Request & { memberId: number }) {
+    const result = await this.memberService.getMyInfo(request.memberId);
+    return {
+      isSuccess: true,
+      ...SUCCESS_RESPONSES.MEMBER_INFO,
+      result,
+    };
   }
 
   @Get(['nickname', 'nickname/:nickname'])

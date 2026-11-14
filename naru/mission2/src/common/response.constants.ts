@@ -4,6 +4,10 @@ export function commonResponseCode(status: number): string {
 }
 
 export const SUCCESS_RESPONSES = {
+  MEMBER_INFO: {
+    code: commonResponseCode(200),
+    message: '회원 정보를 조회했습니다.',
+  },
   LOGIN: {
     code: commonResponseCode(200),
     message: '로그인에 성공했습니다.',
