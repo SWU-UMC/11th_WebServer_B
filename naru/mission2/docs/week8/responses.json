@@ -1,0 +1,137 @@
+{
+  "generatedAt": "2026-11-18T10:00:50.051Z",
+  "source": "Nest HTTP + isolated local MySQL",
+  "responses": [
+    {
+      "name": "등록 전 여부",
+      "method": "GET",
+      "url": "/favorites/550",
+      "status": 200,
+      "body": {
+        "isSuccess": true,
+        "code": "COMMON200",
+        "message": "즐겨찾기 여부를 조회했습니다.",
+        "result": {
+          "isFavorite": false
+        }
+      }
+    },
+    {
+      "name": "등록",
+      "method": "POST",
+      "url": "/favorites",
+      "status": 201,
+      "body": {
+        "isSuccess": true,
+        "code": "COMMON201",
+        "message": "즐겨찾기를 등록했습니다.",
+        "result": {
+          "favoriteId": 1,
+          "movieId": 550,
+          "createdAt": "2026-11-18T10:00:49.942Z"
+        }
+      }
+    },
+    {
+      "name": "중복 등록",
+      "method": "POST",
+      "url": "/favorites",
+      "status": 409,
+      "body": {
+        "isSuccess": false,
+        "code": "FAVORITE409_1",
+        "message": "이미 이 영화를 즐겨찾기하셨습니다.",
+        "result": null
+      }
+    },
+    {
+      "name": "내 목록",
+      "method": "GET",
+      "url": "/favorites",
+      "status": 200,
+      "body": {
+        "isSuccess": true,
+        "code": "COMMON200",
+        "message": "내 즐겨찾기 목록을 조회했습니다.",
+        "result": [
+          {
+            "favoriteId": 2,
+            "movieId": 238,
+            "createdAt": "2026-11-18T10:00:49.954Z"
+          },
+          {
+            "favoriteId": 1,
+            "movieId": 550,
+            "createdAt": "2026-11-18T10:00:49.942Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "등록 후 여부",
+      "method": "GET",
+      "url": "/favorites/550",
+      "status": 200,
+      "body": {
+        "isSuccess": true,
+        "code": "COMMON200",
+        "message": "즐겨찾기 여부를 조회했습니다.",
+        "result": {
+          "isFavorite": true
+        }
+      }
+    },
+    {
+      "name": "해제",
+      "method": "DELETE",
+      "url": "/favorites/550",
+      "status": 200,
+      "body": {
+        "isSuccess": true,
+        "code": "COMMON200",
+        "message": "즐겨찾기를 해제했습니다.",
+        "result": null
+      }
+    },
+    {
+      "name": "해제 후 여부",
+      "method": "GET",
+      "url": "/favorites/550",
+      "status": 200,
+      "body": {
+        "isSuccess": true,
+        "code": "COMMON200",
+        "message": "즐겨찾기 여부를 조회했습니다.",
+        "result": {
+          "isFavorite": false
+        }
+      }
+    },
+    {
+      "name": "영화 기록 저장",
+      "method": "POST",
+      "url": "/movie-records",
+      "status": 201,
+      "body": {
+        "isSuccess": true,
+        "code": "COMMON201",
+        "message": "영화 기록을 저장했습니다.",
+        "result": {
+          "rating": {
+            "ratingId": 1,
+            "movieId": 13,
+            "score": 5,
+            "comment": "다시 보고 싶은 영화",
+            "createdAt": "2026-11-18T10:00:49.997Z",
+            "updatedAt": "2026-11-18T10:00:49.997Z"
+          },
+          "favorite": {
+            "favoriteId": 4,
+            "movieId": 13,
+            "createdAt": "2026-11-18T10:00:49.999Z"
+          }
+        }
+      }
+    }
+  ]
+}

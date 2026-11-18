@@ -1,3 +1,4 @@
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { MemberUpdateRequestDto } from '../dto/member-update-request.dto';
 import {
   Body,
@@ -27,6 +28,7 @@ import {
 import { MemberService } from '../service/member.service';
 import { RatingService } from '../service/rating.service';
 
+@ApiTags('회원')
 @Controller('members')
 export class MemberController {
   constructor(
@@ -43,6 +45,7 @@ export class MemberController {
   }
 
   @Get('me')
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   async getMyInfo(@Req() request: Request & { memberId: number }) {
     const result = await this.memberService.getMyInfo(request.memberId);
@@ -54,6 +57,7 @@ export class MemberController {
   }
 
   @Patch('me')
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   async updateMyInfo(
     @Req() request: Request & { memberId: number },
