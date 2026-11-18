@@ -8,6 +8,7 @@ import { MemberController } from './controller/member.controller';
 import { RatingController } from './controller/rating.controller';
 import { Member } from './entity/member.entity';
 import { Rating } from './entity/rating.entity';
+import { Favorite } from './entity/favorite.entity';
 import { MemberService } from './service/member.service';
 import { RatingService } from './service/rating.service';
 import { AuthController } from './controller/auth.controller';
@@ -41,7 +42,7 @@ import { AuthGuard } from './guard/auth.guard';
       autoLoadEntities: true,
       synchronize: false,
     }),
-    TypeOrmModule.forFeature([Member, Rating]),
+    TypeOrmModule.forFeature([Member, Rating, Favorite]),
   ],
   controllers: [AppController, MemberController, RatingController, AuthController],
   providers: [AppService, MemberService, RatingService, AuthService, AuthGuard],
