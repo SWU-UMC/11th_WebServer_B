@@ -1,3 +1,4 @@
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { AuthGuard } from '../guard/auth.guard';
 import { SUCCESS_RESPONSES } from '../common/response.constants';
@@ -18,6 +19,8 @@ import { CreateRatingDto } from '../dto/create-rating.dto';
 import { UpdateRatingDto } from '../dto/update-rating.dto';
 import { RatingService } from '../service/rating.service';
 
+@ApiTags('평점')
+@ApiBearerAuth()
 @Controller('ratings')
 @UseGuards(AuthGuard)
 export class RatingController {

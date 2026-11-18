@@ -4,7 +4,7 @@
 
 실습 1~3의 NestJS 코드를 기준으로 필수 API 5개를 구현했다.
 실습 4는 워크북의 정상·실패 시나리오 검증 및 미션 기록으로 진행했다.
-Swagger는 선택 미션이므로 이번 범위에 포함하지 않았다.
+선택 미션으로 Swagger 요청·응답·Bearer 인증 문서화도 추가했다.
 
 | Method | URL                   | 동작                           | 성공 상태 |
 | ------ | --------------------- | ------------------------------ | --------- |
@@ -118,3 +118,43 @@ WEEK8_EVIDENCE_PATH=docs/week8/responses.json npm run test:week8
 평점만 저장되면 사용자가 선택한 즐겨찾기가 누락되므로 한 요청의 의도가 깨진다.
 서버 사전 검사는 명확한 도메인 오류 응답을 제공하고, UNIQUE는 동시 저장에서도 데이터 중복을 막는다.
 실제 롤백 검증과 동시 요청 검증은 별개의 범위라는 점을 확인했다.
+
+## 선택 미션: Swagger
+
+서버 실행 후 [Swagger UI](http://localhost:3000/api-docs)에 접속한다.
+OpenAPI JSON은 [api-docs-json](http://localhost:3000/api-docs-json)에서 확인할 수 있다.
+PORT를 바꿨다면 주소의 포트도 변경한다.
+
+1. 공개 API `POST /auth/login`에서 가입한 계정으로 로그인한다.
+2. 응답의 `result.accessToken`을 복사한다.
+3. 상단 **Authorize**에 토큰만 입력한다. `Bearer ` 접두사는 UI가 붙인다.
+4. `8주차 즐겨찾기` 또는 `8주차 영화 기록`의 **Try it out**으로 요청한다.
+5. 응답의 HTTP 상태와 공통 응답의 code를 함께 확인한다.
+
+보호 API에는 자물쇠와 Bearer 인증을 표시한다. 공개 로그인에는 토큰이 필요하지 않다.
+내 정보와 평점 등 기존 보호 API에도 인증 표시를 붙였다.
+영화 기록 요청은 평점·즐겨찾기를 함께 저장하는 예시와 평점만 저장하는 예시를 제공한다.
+성공 응답은 공통 구조 안에 DTO 스키마를 연결하며,
+실패 응답은 상태별 예시(400/401/404/409/500, 해당 API에 적용되는 경우)를 제공한다.
+409는 평점 중복과 즐겨찾기 중복 예시를 선택해 볼 수 있다.
+
+- [Swagger 초기화 코드](../../src/swagger/swagger.setup.ts)
+- [공통 응답 문서 데코레이터](../../src/swagger/api-response.decorator.ts)
+- [Swagger 검증 코드](../../test/swagger.integration.cjs)
+
+```sh
+npm run test:swagger
+```
+
+이 검증은 DB 없이 Swagger UI·정적 JS·OpenAPI JSON을 HTTP로 조회한다.
+8주차 API 5개의 Bearer 요구 사항, 공개 로그인, 요청 필수 필드,
+성공 envelope와 배열/null 응답, 인증 및 중복 오류 예시를 확인한다.
+UI에서 실제 API를 실행하려면 기존 MySQL 설정과 유효한 로그인 계정이 필요하다.
+
+선택 미션 제출 화면 캡처는 아직 포함하지 않았다.
+캡처 대상은 Swagger UI의 8주차 API 목록 및 한 API의 요청·응답 예시 화면이다.
+
+참고: [NestJS OpenAPI 초기화](https://docs.nestjs.com/openapi/introduction),
+[Bearer 인증](https://docs.nestjs.com/openapi/security),
+[DTO 스키마](https://docs.nestjs.com/openapi/types-and-parameters),
+[응답 문서화](https://docs.nestjs.com/openapi/operations).
