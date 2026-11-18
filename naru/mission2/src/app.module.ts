@@ -16,6 +16,8 @@ import { AuthService } from './service/auth.service';
 import { AuthGuard } from './guard/auth.guard';
 import { FavoriteController } from './controller/favorite.controller';
 import { FavoriteService } from './service/favorite.service';
+import { MovieRecordController } from './controller/movie-record.controller';
+import { MovieRecordService } from './service/movie-record.service';
 
 @Module({
   imports: [
@@ -52,6 +54,7 @@ import { FavoriteService } from './service/favorite.service';
     RatingController,
     AuthController,
     FavoriteController,
+    MovieRecordController,
   ],
   providers: [
     AppService,
@@ -60,6 +63,7 @@ import { FavoriteService } from './service/favorite.service';
     AuthService,
     AuthGuard,
     FavoriteService,
+    MovieRecordService,
   ],
 })
 export class AppModule {}
