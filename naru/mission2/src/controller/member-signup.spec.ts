@@ -1,3 +1,4 @@
+import { JwtModule } from '@nestjs/jwt';
 import {
   ForbiddenException,
   INestApplication,
@@ -43,6 +44,11 @@ describe('POST /members', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
+      imports: [
+        JwtModule.register({
+          secret: 'test-only-member-secret-at-least-32-characters',
+        }),
+      ],
       controllers: [MemberController],
       providers: [
         MemberService,

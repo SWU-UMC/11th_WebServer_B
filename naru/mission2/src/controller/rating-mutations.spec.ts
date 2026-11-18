@@ -1,3 +1,4 @@
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -13,6 +14,10 @@ import { RatingController } from './rating.controller';
 
 describe('Rating mutations HTTP', () => {
   let app: INestApplication;
+  let jwtService: JwtService;
+  let tokenA: string;
+  let tokenB: string;
+  let unknownToken: string;
   let rows: Rating[];
   let nextId: number;
   const input = { movieId: 155, score: 4, comment: '좋아요' };
@@ -41,6 +46,11 @@ describe('Rating mutations HTTP', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
+      imports: [
+        JwtModule.register({
+          secret: 'test-only-member-secret-at-least-32-characters',
+        }),
+      ],
       controllers: [RatingController, MemberController],
       providers: [
         RatingService,
@@ -48,6 +58,10 @@ describe('Rating mutations HTTP', () => {
         { provide: getRepositoryToken(Rating), useValue: repository },
       ],
     }).compile();
+    jwtService = module.get(JwtService);
+    tokenA = await jwtService.signAsync({ sub: '1' });
+    tokenB = await jwtService.signAsync({ sub: '2' });
+    unknownToken = await jwtService.signAsync({ sub: '999' });
     app = module.createNestApplication();
     setupApp(app);
     await app.init();
@@ -96,7 +110,8 @@ describe('Rating mutations HTTP', () => {
   });
   const create = () =>
     request(app.getHttpServer())
-      .post('/members/1/ratings')
+      .post('/ratings')
+      .set('Authorization', `Bearer ${tokenA}`)
       .send(input)
       .expect(201);
 
@@ -106,7 +121,14 @@ describe('Rating mutations HTTP', () => {
       isSuccess: true,
       code: 'COMMON201',
       message: '평점 등록에 성공했습니다.',
-      result: 1,
+      result: {
+        ratingId: 1,
+        movieId: 155,
+        score: 4,
+        comment: '좋아요',
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+      },
     });
     expect(repository.save).toHaveBeenCalledTimes(1);
     expect(rows[0]).toMatchObject({ ...input, member: { memberId: 1 } });
@@ -114,19 +136,22 @@ describe('Rating mutations HTTP', () => {
   it('returns 409 for duplicate movie and member, allowing a different member', async () => {
     await create();
     const response = await request(app.getHttpServer())
-      .post('/members/1/ratings')
+      .post('/ratings')
+      .set('Authorization', `Bearer ${tokenA}`)
       .send(input)
       .expect(409);
-    expect(response.body.code).toBe('COMMON409');
+    expect(response.body.code).toBe('RATING409_1');
     expect(repository.save).toHaveBeenCalledTimes(1);
     await request(app.getHttpServer())
-      .post('/members/2/ratings')
+      .post('/ratings')
+      .set('Authorization', `Bearer ${tokenB}`)
       .send(input)
       .expect(201);
   });
   it('returns 404 before rating lookup for an unknown member', async () => {
     await request(app.getHttpServer())
-      .post('/members/999/ratings')
+      .post('/ratings')
+      .set('Authorization', `Bearer ${unknownToken}`)
       .send(input)
       .expect(404);
     expect(repository.existsBy).not.toHaveBeenCalled();
@@ -146,9 +171,11 @@ describe('Rating mutations HTTP', () => {
     { ...input, comment: 'a'.repeat(501) },
     { ...input, comment: 123 },
     { ...input, unexpected: true },
+    { ...input, memberId: 2 },
   ])('rejects invalid create DTO %j', async (body) => {
     const response = await request(app.getHttpServer())
-      .post('/members/1/ratings')
+      .post('/ratings')
+      .set('Authorization', `Bearer ${tokenA}`)
       .send(body)
       .expect(400);
     expect(response.body).toMatchObject({
@@ -162,7 +189,8 @@ describe('Rating mutations HTTP', () => {
     'accepts optional comment %s',
     async (comment) => {
       await request(app.getHttpServer())
-        .post('/members/1/ratings')
+        .post('/ratings')
+        .set('Authorization', `Bearer ${tokenA}`)
         .send({ ...input, comment })
         .expect(201);
       expect(rows[0].comment).toBe(comment ?? null);
@@ -177,21 +205,30 @@ describe('Rating mutations HTTP', () => {
       ),
     );
     await request(app.getHttpServer())
-      .post('/members/1/ratings')
+      .post('/ratings')
+      .set('Authorization', `Bearer ${tokenA}`)
       .send(input)
       .expect(409);
   });
   it('updates a rating and exposes the change through the existing GET', async () => {
     await create();
     const response = await request(app.getHttpServer())
-      .patch('/members/1/ratings/1')
+      .patch('/ratings/1')
+      .set('Authorization', `Bearer ${tokenA}`)
       .send({ score: 5, comment: '수정' })
       .expect(200);
     expect(response.body).toEqual({
       isSuccess: true,
       code: 'COMMON200',
       message: '평점 수정에 성공했습니다.',
-      result: 1,
+      result: {
+        ratingId: 1,
+        movieId: 155,
+        score: 5,
+        comment: '수정',
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+      },
     });
     expect(repository.findOne).toHaveBeenCalledWith({
       where: { ratingId: 1 },
@@ -212,12 +249,14 @@ describe('Rating mutations HTTP', () => {
   it('preserves comment on omission and clears it on explicit null', async () => {
     await create();
     await request(app.getHttpServer())
-      .patch('/members/1/ratings/1')
+      .patch('/ratings/1')
+      .set('Authorization', `Bearer ${tokenA}`)
       .send({ score: 1 })
       .expect(200);
     expect(rows[0].comment).toBe(input.comment);
     await request(app.getHttpServer())
-      .patch('/members/1/ratings/1')
+      .patch('/ratings/1')
+      .set('Authorization', `Bearer ${tokenA}`)
       .send({ score: 2, comment: null })
       .expect(200);
     expect(rows[0].comment).toBeNull();
@@ -229,10 +268,12 @@ describe('Rating mutations HTTP', () => {
     {},
     { score: 4, comment: 'a'.repeat(501) },
     { score: 4, movieId: 1 },
+    { score: 4, memberId: 2 },
   ])('rejects invalid update DTO %j', async (body) => {
     await create();
     await request(app.getHttpServer())
-      .patch('/members/1/ratings/1')
+      .patch('/ratings/1')
+      .set('Authorization', `Bearer ${tokenA}`)
       .send(body)
       .expect(400);
     expect(repository.save).toHaveBeenCalledTimes(1);
@@ -242,10 +283,11 @@ describe('Rating mutations HTTP', () => {
     async (method) => {
       await create();
       const response = await request(app.getHttpServer())
-        [method]('/members/2/ratings/1')
+        [method]('/ratings/1')
+        .set('Authorization', `Bearer ${tokenB}`)
         .send(method === 'patch' ? { score: 5 } : undefined)
         .expect(403);
-      expect(response.body.code).toBe('COMMON403');
+      expect(response.body.code).toBe('RATING403_1');
       expect(rows[0].score).toBe(4);
       expect(repository.remove).not.toHaveBeenCalled();
       expect(repository.save).toHaveBeenCalledTimes(1);
@@ -255,42 +297,106 @@ describe('Rating mutations HTTP', () => {
     'returns 404 for missing rating on %s',
     async (method) => {
       await request(app.getHttpServer())
-        [method]('/members/1/ratings/999')
+        [method]('/ratings/999')
+        .set('Authorization', `Bearer ${tokenA}`)
         .send(method === 'patch' ? { score: 5 } : undefined)
         .expect(404);
       expect(repository.remove).not.toHaveBeenCalled();
       expect(repository.save).not.toHaveBeenCalled();
     },
   );
-  it('deletes with an empty 204 response and excludes the rating from GET', async () => {
+  it('deletes with a common 200 response and excludes the rating from GET', async () => {
     await create();
     const response = await request(app.getHttpServer())
-      .delete('/members/1/ratings/1')
-      .expect(204);
-    expect(response.text).toBe('');
+      .delete('/ratings/1')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(200);
+    expect(response.body).toEqual({
+      isSuccess: true,
+      code: 'COMMON200',
+      message: '평점을 삭제했습니다.',
+      result: null,
+    });
     const list = await request(app.getHttpServer())
       .get('/members/1/ratings')
       .expect(200);
     expect(list.body).toEqual([]);
   });
   it.each([
-    ['post', '/members/abc/ratings'],
-    ['patch', '/members/abc/ratings/1'],
-    ['patch', '/members/1/ratings/abc'],
-    ['delete', '/members/abc/ratings/1'],
-    ['delete', '/members/1/ratings/abc'],
+    ['patch', '/ratings/abc'],
+    ['delete', '/ratings/abc'],
   ] as const)('validates path integers on %s %s', async (method, url) => {
     await request(app.getHttpServer())
       [method](url)
-      .send(
-        method === 'post'
-          ? input
-          : method === 'patch'
-            ? { score: 4 }
-            : undefined,
-      )
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send(method === 'patch' ? { score: 4 } : undefined)
       .expect(400);
     expect(repository.findOne).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();
   });
+  it.each(['post', 'patch', 'delete'] as const)(
+    'rejects unauthenticated %s requests before database access',
+    async (method) => {
+      const response = await request(app.getHttpServer())
+        [method](method === 'post' ? '/ratings' : '/ratings/1')
+        .send(
+          method === 'post'
+            ? input
+            : method === 'patch'
+              ? { score: 5 }
+              : undefined,
+        )
+        .expect(401);
+      expect(response.body.code).toBe('AUTH401_2');
+      expect(repository.existsBy).not.toHaveBeenCalled();
+      expect(repository.findOne).not.toHaveBeenCalled();
+      expect(repository.save).not.toHaveBeenCalled();
+      expect(repository.remove).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['post', 'patch', 'delete'] as const)(
+    'rejects a tampered token on %s',
+    async (method) => {
+      const [header, , signature] = tokenA.split('.');
+      const payload = Buffer.from(JSON.stringify({ sub: '2' })).toString(
+        'base64url',
+      );
+      const response = await request(app.getHttpServer())
+        [method](method === 'post' ? '/ratings' : '/ratings/1')
+        .set('Authorization', `Bearer ${header}.${payload}.${signature}`)
+        .send(
+          method === 'post'
+            ? input
+            : method === 'patch'
+              ? { score: 5 }
+              : undefined,
+        )
+        .expect(401);
+      expect(response.body.code).toBe('AUTH401_3');
+      expect(repository.save).not.toHaveBeenCalled();
+      expect(repository.remove).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['post', 'patch', 'delete'] as const)(
+    'removes the old member ID write route for %s',
+    async (method) => {
+      await request(app.getHttpServer())
+        [method](
+          method === 'post' ? '/members/1/ratings' : '/members/1/ratings/1',
+        )
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send(
+          method === 'post'
+            ? input
+            : method === 'patch'
+              ? { score: 5 }
+              : undefined,
+        )
+        .expect(404);
+      expect(repository.save).not.toHaveBeenCalled();
+      expect(repository.remove).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -1,10 +1,6 @@
+import { ApiException } from '../exception/api.exception';
 import { ERROR_MESSAGES } from '../common/response.constants';
-import {
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, HttpStatus, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import { CreateRatingDto } from '../dto/create-rating.dto';
@@ -22,15 +18,27 @@ export class RatingService {
     private readonly memberService: MemberService,
   ) {}
 
-  async createRating(memberId: number, dto: CreateRatingDto): Promise<number> {
+  async createRating(
+    memberId: number,
+    dto: CreateRatingDto,
+  ): Promise<RatingResponseDto> {
     if (!(await this.memberService.existsById(memberId))) {
-      throw new NotFoundException(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+      throw new ApiException(
+        HttpStatus.NOT_FOUND,
+        'MEMBER404_1',
+        ERROR_MESSAGES.MEMBER_NOT_FOUND,
+      );
     }
     const exists = await this.ratingRepository.existsBy({
       member: { memberId },
       movieId: dto.movieId,
     });
-    if (exists) throw new ConflictException(ERROR_MESSAGES.RATING_DUPLICATE);
+    if (exists)
+      throw new ApiException(
+        HttpStatus.CONFLICT,
+        'RATING409_1',
+        ERROR_MESSAGES.RATING_DUPLICATE,
+      );
 
     const rating = this.ratingRepository.create({
       member: { memberId },
@@ -40,13 +48,18 @@ export class RatingService {
     });
     try {
       const saved = await this.ratingRepository.save(rating);
-      return Number(saved.ratingId);
+      return RatingResponseDto.from(saved);
     } catch (error) {
       if (
         error instanceof QueryFailedError &&
-        error.driverError.code === 'ER_DUP_ENTRY'
+        (error.driverError.code === 'ER_DUP_ENTRY' ||
+          error.driverError.errno === 1062)
       ) {
-        throw new ConflictException(ERROR_MESSAGES.RATING_DUPLICATE);
+        throw new ApiException(
+          HttpStatus.CONFLICT,
+          'RATING409_1',
+          ERROR_MESSAGES.RATING_DUPLICATE,
+        );
       }
       throw error;
     }
@@ -56,12 +69,12 @@ export class RatingService {
     memberId: number,
     ratingId: number,
     dto: UpdateRatingDto,
-  ): Promise<number> {
+  ): Promise<RatingResponseDto> {
     const rating = await this.getOwnedRating(memberId, ratingId);
     rating.score = dto.score;
     if (dto.comment !== undefined) rating.comment = dto.comment;
     const saved = await this.ratingRepository.save(rating);
-    return Number(saved.ratingId);
+    return RatingResponseDto.from(saved);
   }
 
   async deleteRating(memberId: number, ratingId: number): Promise<void> {
@@ -77,9 +90,18 @@ export class RatingService {
       where: { ratingId },
       relations: { member: true },
     });
-    if (!rating) throw new NotFoundException(ERROR_MESSAGES.RATING_NOT_FOUND);
+    if (!rating)
+      throw new ApiException(
+        HttpStatus.NOT_FOUND,
+        'RATING404_1',
+        ERROR_MESSAGES.RATING_NOT_FOUND,
+      );
     if (Number(rating.member.memberId) !== memberId) {
-      throw new ForbiddenException(ERROR_MESSAGES.RATING_FORBIDDEN);
+      throw new ApiException(
+        HttpStatus.FORBIDDEN,
+        'RATING403_1',
+        ERROR_MESSAGES.RATING_FORBIDDEN,
+      );
     }
     return rating;
   }

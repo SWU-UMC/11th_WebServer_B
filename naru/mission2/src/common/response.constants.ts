@@ -4,6 +4,22 @@ export function commonResponseCode(status: number): string {
 }
 
 export const SUCCESS_RESPONSES = {
+  RATING_DELETED: {
+    code: commonResponseCode(200),
+    message: '평점을 삭제했습니다.',
+  },
+  MEMBER_UPDATED: {
+    code: commonResponseCode(200),
+    message: '회원 정보를 수정했습니다.',
+  },
+  MEMBER_INFO: {
+    code: commonResponseCode(200),
+    message: '회원 정보를 조회했습니다.',
+  },
+  LOGIN: {
+    code: commonResponseCode(200),
+    message: '로그인에 성공했습니다.',
+  },
   MEMBER_CREATED: {
     code: commonResponseCode(201),
     message: '회원가입에 성공했습니다.',
@@ -30,6 +46,10 @@ export const MEMBER_CONFLICTS = {
 } as const;
 
 export const ERROR_MESSAGES = {
+  LOGIN_REQUIRED: '로그인이 필요한 요청입니다.',
+  INVALID_TOKEN: '유효하지 않은 토큰입니다.',
+  TOKEN_EXPIRED: '토큰이 만료되었습니다. 다시 로그인해주세요.',
+  INVALID_LOGIN: '이메일 또는 비밀번호가 올바르지 않습니다.',
   INTERNAL_SERVER_ERROR: '서버 오류가 발생했습니다.',
   MEMBER_NOT_FOUND: '회원을 찾을 수 없습니다.',
   MEMBER_DUPLICATE: '이미 사용 중인 이메일 또는 닉네임입니다.',
